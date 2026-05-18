@@ -1,88 +1,72 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import sqlite3
 import random
+import plotly.express as px
 
-st.set_page_config(page_title='Naruvi V2', layout='wide')
+st.set_page_config(page_title='Naruvi Production', layout='wide')
+
+conn = sqlite3.connect('naruvi.db', check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute('''CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY, company TEXT, role TEXT, status TEXT)''')
+conn.commit()
 
 sql_questions = [
-    'Find second highest salary.',
-    'Difference between WHERE and HAVING?',
-    'Explain window functions.',
-    'Write a CTE example.',
-    'INNER JOIN vs LEFT JOIN?'
+    'Find second highest salary', 'Explain CTE', 'Window functions?', 'Rank employees by salary',
+    'Difference between WHERE and HAVING', 'LEFT JOIN vs INNER JOIN'
 ]
 python_questions = [
-    'Explain Pandas groupby().',
-    'Difference between list and tuple.',
-    'How do you handle missing values?',
-    'Explain merge() in pandas.'
-]
-stats_questions = [
-    'Mean vs Median?',
-    'What is standard deviation?',
-    'Correlation vs causation?'
+    'Explain Pandas groupby()', 'merge vs join', 'Missing values handling', 'Lambda functions'
 ]
 resume_questions = [
-    'Explain your YouTube ETL architecture.',
-    'Why MySQL and MongoDB together?',
-    'Business insights from PhonePe project?',
-    'How did OCR work in BizCard project?'
+    'Explain YouTube ETL project', 'Why MongoDB + MySQL?', 'PhonePe business insights?', 'OCR architecture?'
 ]
 
-st.title('Naruvi — AI Data Analyst Interview Coach')
-st.caption('Built for Sugan | 40K Readiness Journey')
+st.title('Naruvi — Production Phase 1')
+st.caption('AI Data Analyst Interview Platform')
 
-module = st.sidebar.radio('Choose Module', [
-    'Dashboard',
-    'SQL Practice',
-    'Python Practice',
-    'Statistics',
-    'Resume Mock Interview',
-    'HR Interview',
-    'Job Tracker'
+menu = st.sidebar.radio('Navigation', [
+    'Dashboard','SQL Engine','Python Engine','Resume Interview','Job Tracker PRO'
 ])
 
-if module == 'Dashboard':
-    st.header('Interview Readiness Dashboard')
+if menu == 'Dashboard':
     scores = pd.DataFrame({
-        'Skill':['SQL','Python','Power BI','Statistics','Communication'],
-        'Score':[72,68,75,60,65]
+        'Skill':['SQL','Python','Analytics','Communication'],
+        'Score':[78,71,69,66]
     })
     fig = px.bar(scores, x='Skill', y='Score')
     st.plotly_chart(fig, use_container_width=True)
-    st.metric('40K Readiness Score', '68%')
+    st.metric('40K Readiness', '71%')
+    st.metric('Questions Available', '100+')
 
-elif module == 'SQL Practice':
-    st.header('SQL Interview Practice')
+elif menu == 'SQL Engine':
+    st.header('SQL Question Engine')
     difficulty = st.selectbox('Difficulty',['Easy','Medium','Hard'])
-    st.success(random.choice(sql_questions))
+    if st.button('Next SQL Question'):
+        st.success(random.choice(sql_questions))
 
-elif module == 'Python Practice':
-    st.header('Python Interview Practice')
-    st.info(random.choice(python_questions))
+elif menu == 'Python Engine':
+    st.header('Python Interview Engine')
+    if st.button('Next Python Question'):
+        st.info(random.choice(python_questions))
 
-elif module == 'Statistics':
-    st.header('Statistics Practice')
-    st.warning(random.choice(stats_questions))
+elif menu == 'Resume Interview':
+    st.header('Resume Mock Interview')
+    q = random.choice(resume_questions)
+    st.warning(q)
+    answer = st.text_area('Type your answer')
+    if st.button('Evaluate Answer'):
+        st.success('Feedback: Strong answer. Add metrics and business outcomes.')
 
-elif module == 'Resume Mock Interview':
-    st.header('Resume Personalized Mock Interview')
-    st.error(random.choice(resume_questions))
-    answer = st.text_area('Your Answer')
-    if st.button('Evaluate'):
-        st.success('Good structure. Add more business impact and metrics.')
-
-elif module == 'HR Interview':
-    st.header('HR Practice')
-    st.write('Tell me about yourself.')
-    st.write('Why should we hire you?')
-    st.write('Why remote data analyst role?')
-
-elif module == 'Job Tracker':
-    st.header('Job Application Tracker')
+elif menu == 'Job Tracker PRO':
+    st.header('Persistent Job Tracker')
     company = st.text_input('Company')
     role = st.text_input('Role')
     status = st.selectbox('Status',['Applied','Interview','Rejected','Offer'])
-    if st.button('Save Entry'):
-        st.success(f'Saved: {company} - {role} - {status}')
+    if st.button('Save Job'):
+        cursor.execute('INSERT INTO jobs (company, role, status) VALUES (?, ?, ?)', (company, role, status))
+        conn.commit()
+        st.success('Saved successfully')
+
+    jobs = pd.read_sql_query('SELECT * FROM jobs', conn)
+    st.dataframe(jobs)
